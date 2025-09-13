@@ -3,6 +3,7 @@ package com.redline.blog.controllers;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,6 +17,17 @@ import lombok.extern.slf4j.Slf4j;
 @ControllerAdvice
 @Slf4j
 public class ErrorController {
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiErrorResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
+        log.error("Caught MethodArgumentNotValidException: ", ex);
+        ApiErrorResponse errorResponse = ApiErrorResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .message(ex.getMessage())
+                .errors(ex.getFieldErrors().stream().map(e -> new ApiErrorResponse.FieldError(e.getField(), e.getDefaultMessage())).toList())
+                .build();
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleException(Exception ex) {
@@ -40,7 +52,7 @@ public class ErrorController {
     }
 
     @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<ApiErrorResponse> handleIllegalStatetException(IllegalStateException ex) {
+    public ResponseEntity<ApiErrorResponse> handleIllegalStateException(IllegalStateException ex) {
         log.error("Caught IllegalStateException: ", ex);
         ApiErrorResponse errorResponse = ApiErrorResponse.builder()
                 .status(HttpStatus.CONFLICT.value())

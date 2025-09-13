@@ -3,6 +3,7 @@ package com.redline.blog.controllers;
 import java.util.List;
 import java.util.UUID;
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,7 +39,7 @@ public class TagController {
     }
 
     @PostMapping()
-    public ResponseEntity<List<TagDto>> saveTags(@RequestBody CreateTagsRequest createTagsRequest) {
+    public ResponseEntity<List<TagDto>> saveTags(@Valid @RequestBody CreateTagsRequest createTagsRequest) {
         List<Tag> savedTags = tagService.createTags(createTagsRequest.getNames());
         List<TagDto> createdTagResponses = savedTags.stream().map(tagMapper::toTagResponse).toList();
 
