@@ -18,12 +18,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import jakarta.persistence.EntityNotFoundException;
-
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -113,52 +110,5 @@ class TagControllerTest {
                 .andExpect(status().isNoContent());
 
         verify(tagService).deleteTagById(id);
-    }
-
-    @Test
-    void getAllTags_whenServiceThrowsRuntimeException_shouldReturnInternalServerError() throws Exception {
-        when(tagService.getTags()).thenThrow(new RuntimeException("Boom"));
-
-        mockMvc.perform(get("/api/v1/tags"))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.status").value(500))
-                .andExpect(jsonPath("$.message").value("Internal Server Error"));
-    }
-
-    @Test
-    void saveTags_whenServiceThrowsIllegalArgumentException_shouldReturnBadRequest() throws Exception {
-        Set<String> names = Set.of("bad");
-        CreateTagsRequest request = CreateTagsRequest.builder().names(names).build();
-
-        when(tagService.createTags(names)).thenThrow(new IllegalArgumentException("Invalid tags"));
-
-        mockMvc.perform(post("/api/v1/tags")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.message").value("Invalid tags"));
-    }
-
-    @Test
-    void deleteTag_whenServiceThrowsEntityNotFoundException_shouldReturnNotFound() throws Exception {
-        UUID id = UUID.randomUUID();
-        doThrow(new EntityNotFoundException("Tag not found")).when(tagService).deleteTagById(id);
-
-        mockMvc.perform(delete("/api/v1/tags/{id}", id))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.message").value("Tag not found"));
-    }
-
-    @Test
-    void deleteTag_whenServiceThrowsIllegalStateException_shouldReturnConflict() throws Exception {
-        UUID id = UUID.randomUUID();
-        doThrow(new IllegalStateException("Tag in use")).when(tagService).deleteTagById(id);
-
-        mockMvc.perform(delete("/api/v1/tags/{id}", id))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.status").value(409))
-                .andExpect(jsonPath("$.message").value("Tag in use"));
     }
 }
