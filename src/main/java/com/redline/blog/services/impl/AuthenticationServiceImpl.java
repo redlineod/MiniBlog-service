@@ -1,11 +1,12 @@
 package com.redline.blog.services.impl;
 
 import java.security.Key;
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -27,10 +28,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final AuthenticationManager authorizationManager;
     private final UserDetailsService userDetailsService;
 
-    @Value("${jwt.secret}")
-    private String secretKey;
-
-    private final Long jwtExpirationInMs = 86400000L; // 24 hours
+    // Generate a secure random key for JWT signing
+    private final String secretKey = generateSecureKey();
 
     @Override
     public UserDetails authenticate(String email, String password) {
@@ -42,6 +41,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
+        // 24 hours
+        long jwtExpirationInMs = 86400000L;
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(userDetails.getUsername())
@@ -72,4 +73,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    /**
+     * Generates a cryptographically secure random key for JWT signing.
+     * This ensures each application instance has its own unique signing key.
+     */
+    private String generateSecureKey() {
+        SecureRandom secureRandom = new SecureRandom();
+        byte[] keyBytes = new byte[64]; // 512 bits for HS256
+        secureRandom.nextBytes(keyBytes);
+        return Base64.getEncoder().encodeToString(keyBytes);
+    }
 }
